@@ -1,5 +1,6 @@
 let $ = require('jquery');
 const http = require('http');
+import css from '../scss/Background.scss';
 
 import { Scene, Renderer, PerspectiveCamera, VideoTexture,
 WebGLRenderer, LinearFilter, PlaneGeometry, MeshBasicMaterial,
