@@ -1,10 +1,12 @@
 let $ = require('jquery');
 const http = require('http');
-import css from '../scss/Background.scss';
+import css from '../scss/Three.scss';
+const PARTICLE = require('./Particles.js');
 
 import { Scene, Renderer, PerspectiveCamera, VideoTexture,
 WebGLRenderer, LinearFilter, PlaneGeometry, MeshBasicMaterial,
-Mesh, AxisHelper, BoxGeometry, LoadingManager, ImageLoader } from 'three';
+Mesh, AxisHelper, BoxGeometry, LoadingManager, ImageLoader,
+BufferGeometry, BufferAttribute } from 'three';
 
 import { RenderPass, EffectComposer, GlitchPass } from 'postprocessing';
 
@@ -27,6 +29,27 @@ let main = {
   videoImage:'',
   composer:'',
   time:'',
+  loadScene: '',
+  loadCamera: '',
+  loadBox: '',
+  resources_loaded: true, // LOADING FUNCTION, SEPARATE LOGIC
+  loadingManager: '',
+
+  // LOADING SCREEN LOGIC
+  loadingScreen() {
+
+    this.loadScene = new Scene();
+    this.loadCamera = new PerspectiveCamera(90, 1280/720, 0.1, 100);
+    this.loadBox = new Mesh(
+    new BoxGeometry( 0.5, 0.5, 0.5 ),
+    new MeshBasicMaterial( { color: 0x444ff })
+    )
+
+    this.loadBox.position.set(0, 0, 5);
+    this.loadCamera.lookAt(this.loadBox.position);
+    this.loadScene.add(this.loadBox);
+
+  },
 
   defineRenderer() {
 
@@ -99,37 +122,23 @@ let main = {
 
       else {
 
-      /*
-      // Progress Bar
-      var progress = document.createElement('div');
-      progress.setAttribute("id", "progress");
+      console.log("WebGL works");
 
-      var progressBar = document.createElement('div');
-      progressBar.setAttribute("id", "prograssBar");
+      that.loadingScreen();
+      that.loadingManager = new LoadingManager();
+      that.loadingManager.onProgress = function(item, loaded, total) {
+      console.log(item, loaded, total);
+      };
 
-      progress.appendChild(progressBar);
-      document.body.appendChild(progress);
-
-      var manager = new LoadingManager();
-      manager.onProgress = function ( item, loaded, total ) {
-        progressBar.style.width = (loaded / total * 100) + '%';
-  };
-
-  function addRandomPlaceHoldItImage(){
-    var r = Math.round(Math.random() * 4000);
-    new ImageLoader(manager).load('http://placehold.it/' + r + 'x' + r);
-  }
-
-  for(var i = 0; i < 10; i++) addRandomPlaceHoldItImage();
-
-  */
+      that.loadingManager.onLoad = function() {
+      console.log("loaded all resources");
+      that.resources_loaded = true;
+      };
 
       that.scene = new Scene();
 
       that.defineCamera();
       that.camera.position.z = 5;
-
-	//	that.camera = new PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
 
       that.defineRenderer();
 
@@ -137,14 +146,35 @@ let main = {
       that.defineVideo();
       that.definePlane();
 
+      var particle = PARTICLE.particle(that.scene);
+
+      var geometry = new BufferGeometry();
+// create a simple square shape. We duplicate the top left and bottom right
+// vertices because each vertex needs to appear once per triangle.
+var vertices = new Float32Array( [
+	-1.0, -1.0,  1.0,
+	 1.0, -1.0,  1.0,
+	 1.0,  1.0,  1.0,
+
+	 1.0,  1.0,  1.0,
+	-1.0,  1.0,  1.0,
+	-1.0, -1.0,  1.0
+] );
+
+// itemSize = 3 because there are 3 values (components) per vertex
+geometry.addAttribute( 'position', new BufferAttribute( vertices, 3 ) );
+var material = new MeshBasicMaterial( { color: 0xff0000 } );
+var mesh = new Mesh( geometry, material );
+
+  that.scene.add(mesh);
+
       that.composer = new EffectComposer( that.renderer );
       that.composer.addPass( new RenderPass ( that.scene, that.camera ));
+/*
       var glitchPass = new GlitchPass();
       glitchPass.renderToScreen = true;
       that.composer.addPass( glitchPass );
-
-    //  that.axes = new AxisHelper(1000);
-    //  that.scene.add(that.axes);
+*/
 
     // still not working
       var onWindowResize = function () {
@@ -152,24 +182,21 @@ let main = {
         that.camera.aspect = window.innerWidth / window.innerHeight;
         that.camera.updateProjectionMatrix();
         that.renderer.setSize( window.innerWidth, window.innerHeight );
-
-    //    that.pauseVideo();
-
-        /*
-          window.innerWidth = window.innerWidth;
-          window.innerHeight = window.innerHeight;
-
-          that.camera.aspect = window.innerWidth / window.innerHeight;
-
-          that.camera.updateProjectionMatrix();
-
-          that.renderer.setSize( window.innerWidth / window.innerHeight );
-          that.renderer.render(that.scene, that.camera); */
-
+        console.log( 'width: '+ window.innerWidth + ' length: ' + window.innerHeight);
         }
       }
 
+      window.addEventListener( 'resize' , onWindowResize(), false);
+
       var animate = function () {
+
+        if (that.resources_loaded == false) {
+          requestAnimationFrame( animate );
+          that.renderer.render(that.loadScene, that.loadCamera);
+          return;
+        }
+
+
 			requestAnimationFrame( animate );
       that.time = Date.now();
       that.composer.render();
@@ -177,79 +204,9 @@ let main = {
 			};
 
 			animate();
-      window.addEventListener( 'resize' , onWindowResize(), false);
+
 
     }
-
-    // Determine if WebGL enabled.
-    /*
-    if ( Detector == false ) { alert("Need WebGL"); } // Can put interesting static page here.
-
-    else {
-
-    // Create new Scene
-    that.scene = new Scene;
-
-    that.container = document.createElement( 'div' );
-    document.body.appendChild( that.container );
-
-    // Create and Define Renderer
-
-    that.defineRenderer();
-
-    // Create and Define Camera
-
-    that.defineCamera();
-
-    that.axes = new AxisHelper(1000);
-    that.scene.add(that.axes);
-
-    that.defineVideo();
-    that.definePlane();
-
-    // postprocessing
-
-    that.renderModel = new RenderPass( that.scene, that.camera );
-
-    that.composer = new EffectComposer( that.renderer );
-
-    that.composer.addPass ( that.renderModel );
-
-    // Listen for window resizing (Need to also detect for landscape mode.)
-    window.addEventListener( 'resize' , that.onWindowResize(), false);
-
-    $('body').append("<h1>This works</h1>")
-
-  }
-  },
-
-  // Cannot read properties. Binding?
-  onWindowResize() {
-
-
-    window.innerWidth = window.innerWidth;
-    window.innerHeight = window.innerHeight;
-
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-
-    this.camera.updateProjectionMatrix();
-
-    this.renderer.setSize.bind(this.renderer) ( window.innerWidth / window.innerHeight );
-    this.composer.reset();
-  },
-
-  render() {
-
-    this.composer.render();
-
-  },
-
-  animate() {
-
-    requestAnimationFrame( this.animate );
-    this.render();
-
-  } */
 }
 
 let Main = function Main() {
