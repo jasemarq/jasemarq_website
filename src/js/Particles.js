@@ -1,12 +1,58 @@
-/**
+
+import { Geometry, ParticleBasicMaterial, Vertex, Vector3,
+ParticleSystem, ImageUtils, AdditiveBlending } from 'three';
+
+const particles = {
+
+  particleCount: '',
+  particles: '',
+  pMaterial: '',
+
+  createParticles(scene) {
+
+    var _scene = scene;
+
+    this.particleCount = 180;
+    this.particles = new Geometry();
+    this.pMaterial = new ParticleBasicMaterial( { color: 0xFFFFFF, size: 20 });
+
+
+    for (var p=0; p<this.particleCount; p++) {
+      var pX = Math.random() * 500 - 250,
+          pY = Math.random() * 500 - 250,
+          pZ = Math.random() & 500 - 250,
+          particle = new Vertex(
+          new Vector3(pX, pY, pZ)
+        );
+
+        // Add it to the geometry
+        this.particles.vertices.push(particle);
+    }
+
+    // Create the particle system
+    var particleSystem = new ParticleSystem(
+      this.particles, this.pMaterial);
+
+      particleSystem.position.z = 2;
+
+    //  _scene.add(particleSystem);
+
+  }
+}
+
+
+/*
+
 New Particles based on invention by Simo Santavirta @simppafi
 http://www.simppa.fi/blog/the-new-particle/
 Also inspired by The Spirit created by @edankwan
-https://github.com/edankwan/The-Spirit
-**/
+
+
 
 import { BufferGeometry, BufferAttribute, MeshBasicMaterial,
-Mesh } from 'three';
+Mesh, PerspectiveCamera, OrbitControls, Group, BoxHelper, BoxGeometry,
+AdditiveBlending, PointsMaterial, Vector3, Points, LineBasicMaterial,
+VertexColors, LineSegments, WebGLRenderer,   } from 'three';
 
 const particles = {
 
@@ -30,7 +76,7 @@ const particles = {
     that.angle = PI * 2 / 3;
 
     // Define count. Can update later. (Choose experience.)
-    that.count = 1;
+    that.count = 100000;
 
     // Vertex data (init 1st stage, final 2nd stage)
     that.init = new Float32Array(that.count * 3 * 3);
@@ -47,27 +93,27 @@ const particles = {
       [Math.sin(that.angle * 3), Math.cos(that.angle * 3), 0] // Final Vertice # 3
     ]
 
-    for(var i = 0; i < that.count; i++) {
+    for(var i = 0; i < that.count; i+= 9) {
 
-      that.init[0] = that.angles[0][0];
-      that.init[1] = that.angles[0][1];
-      that.init[2] = that.angles[0][2];
-      that.init[3] = that.angles[1][0];
-      that.init[4] = that.angles[1][1];
-      that.init[5] = that.angles[1][2];
-      that.init[6] = that.angles[2][0];
-      that.init[7] = that.angles[2][1];
-      that.init[8] = that.angles[2][2];
+      that.init[i] = that.angles[0][0];
+      that.init[i+1] = that.angles[0][1];
+      that.init[i+2] = that.angles[0][2];
+      that.init[i+3] = that.angles[1][0];
+      that.init[i+4] = that.angles[1][1];
+      that.init[i+5] = that.angles[1][2];
+      that.init[i+6] = that.angles[2][0];
+      that.init[i+7] = that.angles[2][1];
+      that.init[i+8] = that.angles[2][2];
 
-      that.final[0] = that.angles[3][0];
-      that.final[1] = that.angles[3][1];
-      that.final[2] = that.angles[3][2];
-      that.final[3] = that.angles[4][0];
-      that.final[4] = that.angles[4][1];
-      that.final[5] = that.angles[4][2];
-      that.final[6] = that.angles[5][0];
-      that.final[7] = that.angles[5][1];
-      that.final[8] = that.angles[5][2];
+      that.final[i] = that.angles[3][0];
+      that.final[1+1] = that.angles[3][1];
+      that.final[i+2] = that.angles[3][2];
+      that.final[i+3] = that.angles[4][0];
+      that.final[i+4] = that.angles[4][1];
+      that.final[i+5] = that.angles[4][2];
+      that.final[i+6] = that.angles[5][0];
+      that.final[i+7] = that.angles[5][1];
+      that.final[i+8] = that.angles[5][2];
 
     }
 
@@ -83,6 +129,9 @@ const particles = {
 
   }
 }
+
+*/
+
 
 let Particle = function Particle() {
   return Object.assign(Object.create(particles), {});

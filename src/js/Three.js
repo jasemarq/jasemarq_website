@@ -1,12 +1,16 @@
 let $ = require('jquery');
 const http = require('http');
 import css from '../scss/Three.scss';
+
+const NAVIGATION = require('./Navigation.js');
 const PARTICLE = require('./Particles.js');
 
 import { Scene, Renderer, PerspectiveCamera, VideoTexture,
 WebGLRenderer, LinearFilter, PlaneGeometry, MeshBasicMaterial,
-Mesh, AxisHelper, BoxGeometry, LoadingManager, ImageLoader,
-BufferGeometry, BufferAttribute } from 'three';
+Mesh, MeshLambertMaterial, AxisHelper, BoxGeometry,
+LoadingManager, ImageLoader, BufferGeometry, BufferAttribute,
+AmbientLight, GridHelper, DirectionalLight, DirectionalLightHelper,
+SpotLight } from 'three';
 
 import { RenderPass, EffectComposer, GlitchPass } from 'postprocessing';
 
@@ -39,7 +43,7 @@ let main = {
   loadingScreen() {
 
     this.loadScene = new Scene();
-    this.loadCamera = new PerspectiveCamera(90, 1280/720, 0.1, 100);
+    this.loadCamera = new PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 100);
     this.loadBox = new Mesh(
     new BoxGeometry( 0.5, 0.5, 0.5 ),
     new MeshBasicMaterial( { color: 0x444ff })
@@ -104,16 +108,35 @@ let main = {
 
   definePlane() { //  Creates plane & applies video texture to screen.
 
-    this.plane = new PlaneGeometry( 75, 37.5, 5, 4 );
-    this.movieMaterial = new MeshBasicMaterial( { map: this.texture, overdraw: true } );
+    this.plane = new PlaneGeometry( 45, 22.25, 0, 0);
+    this.movieMaterial = new MeshLambertMaterial( { map: this.texture, overdraw: true } );
     this.movieScreen = new Mesh( this.plane, this.movieMaterial );
     this.scene.add( this.movieScreen );
     console.log("plane defined");
 	  this.camera.lookAt(this.movieScreen.position);
 
+    var spotLight = new SpotLight( 0xffffff );
+    spotLight.position.set( 0, 0, 100 );
+    spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+    spotLight.shadow.camera.near = 50;
+    spotLight.shadow.camera.far = 400;
+    spotLight.shadow.camera.fov = 30;
+    this.scene.add( spotLight );
+
+    var planeb = new PlaneGeometry(75, 37.5, 1, 0);
+    var planeMat = new MeshLambertMaterial( { color: 0xffffff }); //#4b74c6
+    var planeBB = new Mesh( planeb, planeMat );
+    planeBB.position.z = -0.01;
+    this.scene.add(planeBB);
+
+
   },
 
   init() {
+
+      NAVIGATION.renderTitle();
 
       // Well that's helpful.
       var that = this;
@@ -137,36 +160,22 @@ let main = {
 
       that.scene = new Scene();
 
+      PARTICLE.createParticles(that.scene);
+
       that.defineCamera();
       that.camera.position.z = 5;
 
+
       that.defineRenderer();
+      that.renderer.shadowMapEnabled = true;
+
 
       // Cannot add video texture to plane.
       that.defineVideo();
       that.definePlane();
 
-      var particle = PARTICLE.particle(that.scene);
+      that.plane.receiveShadow = true
 
-      var geometry = new BufferGeometry();
-// create a simple square shape. We duplicate the top left and bottom right
-// vertices because each vertex needs to appear once per triangle.
-var vertices = new Float32Array( [
-	-1.0, -1.0,  1.0,
-	 1.0, -1.0,  1.0,
-	 1.0,  1.0,  1.0,
-
-	 1.0,  1.0,  1.0,
-	-1.0,  1.0,  1.0,
-	-1.0, -1.0,  1.0
-] );
-
-// itemSize = 3 because there are 3 values (components) per vertex
-geometry.addAttribute( 'position', new BufferAttribute( vertices, 3 ) );
-var material = new MeshBasicMaterial( { color: 0xff0000 } );
-var mesh = new Mesh( geometry, material );
-
-  that.scene.add(mesh);
 
       that.composer = new EffectComposer( that.renderer );
       that.composer.addPass( new RenderPass ( that.scene, that.camera ));
@@ -200,7 +209,7 @@ var mesh = new Mesh( geometry, material );
 			requestAnimationFrame( animate );
       that.time = Date.now();
       that.composer.render();
-//			that.renderer.render(that.scene, that.camera);
+			that.renderer.render(that.scene, that.camera);
 			};
 
 			animate();
